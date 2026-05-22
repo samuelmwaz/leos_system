@@ -306,51 +306,7 @@
     <!-- Active food tickets -->
     <div class="card">
       <div class="card-title"><span>🔥</span> Active Food Tickets</div>
-      <div id="kitchenTickets">
-
-        <div class="ticket normal" id="kt1">
-          <div class="ticket-header">
-            <span class="ticket-table">Table 4</span>
-            <span class="timer late">12 min</span>
-          </div>
-          <ul class="ticket-items">
-            <li><span class="qty">1×</span> T-Bone Steak</li>
-            <li><span class="qty">1×</span> Wings Basket</li>
-          </ul>
-          <div class="ticket-actions">
-            <button class="btn btn-green" onclick="completeTicket('kt1','kitchen')">✓ Done</button>
-            <button class="btn btn-amber" onclick="flagTicket('kt1')">⚑ Urgent</button>
-          </div>
-        </div>
-
-        <div class="ticket normal" id="kt2">
-          <div class="ticket-header">
-            <span class="ticket-table">Table 1</span>
-            <span class="timer warn">6 min</span>
-          </div>
-          <ul class="ticket-items">
-            <li><span class="qty">2×</span> Chicken & Chips</li>
-          </ul>
-          <div class="ticket-actions">
-            <button class="btn btn-green" onclick="completeTicket('kt2','kitchen')">✓ Done</button>
-            <button class="btn btn-amber" onclick="flagTicket('kt2')">⚑ Urgent</button>
-          </div>
-        </div>
-
-        <div class="ticket urgent" id="kt3">
-          <div class="ticket-header">
-            <span class="ticket-table">Table 2 🔴</span>
-            <span class="timer late">18 min</span>
-          </div>
-          <ul class="ticket-items">
-            <li><span class="qty">1×</span> T-Bone Steak</li>
-          </ul>
-          <div class="ticket-actions">
-            <button class="btn btn-green" onclick="completeTicket('kt3','kitchen')">✓ Done</button>
-          </div>
-        </div>
-
-      </div>
+      <div id="kitchenTickets"></div>
     </div>
 
     <!-- Manual ticket add -->
@@ -392,36 +348,7 @@
     <!-- Active drink tickets -->
     <div class="card">
       <div class="card-title"><span>🍺</span> Active Drink Orders</div>
-      <div id="barTickets">
-
-        <div class="ticket bar-order" id="bt1">
-          <div class="ticket-header">
-            <span class="ticket-table">Table 2</span>
-            <span class="timer ok">2 min</span>
-          </div>
-          <ul class="ticket-items">
-            <li><span class="qty">2×</span> Mosi Lager</li>
-            <li><span class="qty">1×</span> Jameson Shot</li>
-          </ul>
-          <div class="ticket-actions">
-            <button class="btn btn-green" onclick="completeTicket('bt1','bar')">✓ Served</button>
-          </div>
-        </div>
-
-        <div class="ticket bar-order" id="bt2">
-          <div class="ticket-header">
-            <span class="ticket-table">Table 3</span>
-            <span class="timer warn">7 min</span>
-          </div>
-          <ul class="ticket-items">
-            <li><span class="qty">3×</span> Smirnoff & Coke</li>
-          </ul>
-          <div class="ticket-actions">
-            <button class="btn btn-green" onclick="completeTicket('bt2','bar')">✓ Served</button>
-          </div>
-        </div>
-
-      </div>
+      <div id="barTickets"></div>
     </div>
 
     <!-- Add drink ticket -->
@@ -536,16 +463,7 @@
     <!-- Internal notes / announcements -->
     <div class="card">
       <div class="card-title"><span>📢</span> Staff Announcements</div>
-      <div id="notesFeed" style="margin-bottom:12px;">
-        <div class="ticket" style="margin-bottom:8px; font-size:.85rem;">
-          <strong style="color:var(--gold);">Manager:</strong> Table 2 VIP guests — priority service tonight.
-          <div style="margin-top:3px; font-size:.72rem; color:var(--muted);">8:04 PM</div>
-        </div>
-        <div class="ticket" style="margin-bottom:8px; font-size:.85rem;">
-          <strong style="color:var(--amber);">Kitchen:</strong> T-Bone steak taking longer — 5 extra mins.
-          <div style="margin-top:3px; font-size:.72rem; color:var(--muted);">8:15 PM</div>
-        </div>
-      </div>
+      <div id="notesFeed" style="margin-bottom:12px;"></div>
       <div class="field" style="margin-bottom:8px;">
         <input type="text" id="noteInput" placeholder="Post announcement to all staff…" />
       </div>
@@ -558,43 +476,107 @@
 
 <!-- ════ FOOTER ════ -->
 <footer class="footer-nav">
-  <span>Leo's Pub & Grill — Kitchen & Staff Portal</span>
+  <span>Leo's Pub & Grill — Kitchen & Staff Portal &nbsp;
+    <button class="reset-btn" onclick="resetKitchenData()">🗑 Reset All Data</button>
+  </span>
   <a href="leos_system.html" class="page-link">← Back to Customer & Operations</a>
 </footer>
 
 <div id="toast"></div>
 
 <script>
-  let kitchenDone = 7;
-  let barDone = 14;
-  let kitchenPending = 3;
-  let barPending = 2;
+  // ════════════════════════════════════════════
+  //  LEOS KITCHEN PORTAL — localStorage Persistence
+  //  All tickets, table states, notes, and
+  //  counters survive page refresh.
+  // ════════════════════════════════════════════
 
-  function completeTicket(id, station) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('done');
-    setTimeout(() => el.remove(), 600);
-    if (station === 'kitchen') {
-      kitchenPending = Math.max(0, kitchenPending - 1);
-      kitchenDone++;
-      document.getElementById('kitchenPending').textContent = kitchenPending;
-      document.getElementById('kitchenDone').textContent = kitchenDone;
-      showToast('✅ Kitchen ticket marked complete');
-    } else {
-      barPending = Math.max(0, barPending - 1);
-      barDone++;
-      document.getElementById('barPending').textContent = barPending;
-      document.getElementById('barDone').textContent = barDone;
-      showToast('✅ Bar order marked served');
-    }
+  const KEYS = {
+    kitchen:  'leos_kitchen_tickets',   // array of ticket objects
+    bar:      'leos_bar_tickets',       // array of ticket objects
+    tables:   'leos_table_statuses',    // { "Table 1": "occupied", ... }
+    notes:    'leos_staff_notes',       // array of { text, time }
+    kstats:   'leos_kitchen_stats',     // { done, pending }
+    bstats:   'leos_bar_stats',         // { done, pending }
+  };
+
+  function load(key, fallback) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+  }
+  function save(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
   }
 
-  function flagTicket(id) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.classList.add('urgent');
-    el.querySelector('.ticket-table').textContent += ' 🔴';
+  // ── State (restored from storage) ──
+  let kitchenTickets = load(KEYS.kitchen, [
+    { id:'kt1', table:'Table 4', items:['T-Bone Steak','Wings Basket'], urgent:true,  timer:'12 min', timerClass:'late' },
+    { id:'kt2', table:'Table 1', items:['Chicken & Chips','Chicken & Chips'], urgent:false, timer:'6 min',  timerClass:'warn' },
+    { id:'kt3', table:'Table 2', items:['T-Bone Steak'], urgent:true,  timer:'18 min', timerClass:'late' },
+  ]);
+
+  let barTickets = load(KEYS.bar, [
+    { id:'bt1', table:'Table 2', items:['2× Mosi Lager','1× Jameson Shot'], timer:'2 min', timerClass:'ok' },
+    { id:'bt2', table:'Table 3', items:['3× Smirnoff & Coke'], timer:'7 min', timerClass:'warn' },
+  ]);
+
+  const tableStatusDefaults = { "Table 1":"occupied","Table 2":"vip","Table 3":"available","Table 4":"occupied" };
+  const tableStatuses = load(KEYS.tables, tableStatusDefaults);
+
+  const tableLabels = { available:'Available', occupied:'Occupied', vip:'VIP — Occupied' };
+
+  let notes = load(KEYS.notes, [
+    { text: 'Table 2 VIP guests — priority service tonight.', time: '8:04 PM', role: 'Manager', color: 'var(--gold)' },
+    { text: 'T-Bone steak taking longer — 5 extra mins.', time: '8:15 PM', role: 'Kitchen', color: 'var(--amber)' },
+  ]);
+
+  let kStats = load(KEYS.kstats, { done: 7, pending: 3 });
+  let bStats = load(KEYS.bstats, { done: 14, pending: 2 });
+
+  // ── Render kitchen tickets ──
+  function renderKitchenTickets() {
+    const div = document.getElementById('kitchenTickets');
+    div.innerHTML = '';
+    if (kitchenTickets.length === 0) {
+      div.innerHTML = '<div class="empty"><span class="icon">✅</span>All caught up — no pending tickets</div>';
+      return;
+    }
+    kitchenTickets.forEach((t, idx) => {
+      const el = document.createElement('div');
+      el.className = `ticket ${t.urgent ? 'urgent' : 'normal'}`;
+      el.id = t.id;
+      const rows = t.items.map(i => `<li><span class="qty">1×</span> ${i}</li>`).join('');
+      el.innerHTML = `
+        <div class="ticket-header">
+          <span class="ticket-table">${t.table}${t.urgent ? ' 🔴' : ''}</span>
+          <span class="timer ${t.timerClass}">${t.timer}</span>
+        </div>
+        <ul class="ticket-items">${rows}</ul>
+        <div class="ticket-actions">
+          <button class="btn btn-green" onclick="completeKitchen(${idx})">✓ Done</button>
+          <button class="btn btn-amber" onclick="flagKitchen(${idx})">⚑ Urgent</button>
+        </div>
+      `;
+      div.appendChild(el);
+    });
+    document.getElementById('kitchenPending').textContent = kStats.pending;
+    document.getElementById('kitchenDone').textContent    = kStats.done;
+  }
+
+  function completeKitchen(idx) {
+    const el = document.getElementById(kitchenTickets[idx].id);
+    if (el) { el.classList.add('done'); setTimeout(() => renderKitchenTickets(), 500); }
+    kitchenTickets.splice(idx, 1);
+    kStats.done++;
+    kStats.pending = Math.max(0, kStats.pending - 1);
+    save(KEYS.kitchen, kitchenTickets);
+    save(KEYS.kstats, kStats);
+    showToast('✅ Kitchen ticket complete & saved');
+  }
+
+  function flagKitchen(idx) {
+    kitchenTickets[idx].urgent = true;
+    save(KEYS.kitchen, kitchenTickets);
+    renderKitchenTickets();
     showToast('⚑ Ticket flagged as urgent');
   }
 
@@ -602,89 +584,168 @@
     const table = document.getElementById('kt-table').value.split(' — ')[0];
     const items = document.getElementById('kt-items').value.trim();
     if (!items) { showToast('⚠️ Enter item names'); return; }
-    const id = 'kt_' + Date.now();
-    const div = document.getElementById('kitchenTickets');
-    const el = document.createElement('div');
-    el.className = 'ticket normal';
-    el.id = id;
-    const itemRows = items.split(',').map(i => `<li><span class="qty">1×</span> ${i.trim()}</li>`).join('');
-    el.innerHTML = `
-      <div class="ticket-header">
-        <span class="ticket-table">${table}</span>
-        <span class="timer ok">Just now</span>
-      </div>
-      <ul class="ticket-items">${itemRows}</ul>
-      <div class="ticket-actions">
-        <button class="btn btn-green" onclick="completeTicket('${id}','kitchen')">✓ Done</button>
-        <button class="btn btn-amber" onclick="flagTicket('${id}')">⚑ Urgent</button>
-      </div>
-    `;
-    div.prepend(el);
-    kitchenPending++;
-    document.getElementById('kitchenPending').textContent = kitchenPending;
+    const ticket = {
+      id: 'kt_' + Date.now(),
+      table,
+      items: items.split(',').map(s => s.trim()),
+      urgent: false,
+      timer: 'Just now',
+      timerClass: 'ok'
+    };
+    kitchenTickets.unshift(ticket);
+    kStats.pending++;
+    save(KEYS.kitchen, kitchenTickets);
+    save(KEYS.kstats, kStats);
     document.getElementById('kt-items').value = '';
-    showToast('🍳 Kitchen ticket added');
+    renderKitchenTickets();
+    showToast('🍳 Kitchen ticket saved');
+  }
+
+  // ── Render bar tickets ──
+  function renderBarTickets() {
+    const div = document.getElementById('barTickets');
+    div.innerHTML = '';
+    if (barTickets.length === 0) {
+      div.innerHTML = '<div class="empty"><span class="icon">🍺</span>No pending bar orders</div>';
+      return;
+    }
+    barTickets.forEach((t, idx) => {
+      const el = document.createElement('div');
+      el.className = 'ticket bar-order';
+      el.id = t.id;
+      const rows = t.items.map(i => `<li><span class="qty">—</span> ${i}</li>`).join('');
+      el.innerHTML = `
+        <div class="ticket-header">
+          <span class="ticket-table">${t.table}</span>
+          <span class="timer ${t.timerClass}">${t.timer}</span>
+        </div>
+        <ul class="ticket-items">${rows}</ul>
+        <div class="ticket-actions">
+          <button class="btn btn-green" onclick="completeBar(${idx})">✓ Served</button>
+        </div>
+      `;
+      div.appendChild(el);
+    });
+    document.getElementById('barPending').textContent = bStats.pending;
+    document.getElementById('barDone').textContent    = bStats.done;
+  }
+
+  function completeBar(idx) {
+    const el = document.getElementById(barTickets[idx].id);
+    if (el) { el.classList.add('done'); setTimeout(() => renderBarTickets(), 500); }
+    barTickets.splice(idx, 1);
+    bStats.done++;
+    bStats.pending = Math.max(0, bStats.pending - 1);
+    save(KEYS.bar, barTickets);
+    save(KEYS.bstats, bStats);
+    showToast('✅ Bar order served & saved');
   }
 
   function addBarTicket() {
     const table = document.getElementById('bt-table').value.split(' — ')[0];
     const items = document.getElementById('bt-items').value.trim();
     if (!items) { showToast('⚠️ Enter drink names'); return; }
-    const id = 'bt_' + Date.now();
-    const div = document.getElementById('barTickets');
-    const el = document.createElement('div');
-    el.className = 'ticket bar-order';
-    el.id = id;
-    const itemRows = items.split(',').map(i => `<li><span class="qty">1×</span> ${i.trim()}</li>`).join('');
-    el.innerHTML = `
-      <div class="ticket-header">
-        <span class="ticket-table">${table}</span>
-        <span class="timer ok">Just now</span>
-      </div>
-      <ul class="ticket-items">${itemRows}</ul>
-      <div class="ticket-actions">
-        <button class="btn btn-green" onclick="completeTicket('${id}','bar')">✓ Served</button>
-      </div>
-    `;
-    div.prepend(el);
-    barPending++;
-    document.getElementById('barPending').textContent = barPending;
+    const ticket = {
+      id: 'bt_' + Date.now(),
+      table,
+      items: items.split(',').map(s => s.trim()),
+      timer: 'Just now',
+      timerClass: 'ok'
+    };
+    barTickets.unshift(ticket);
+    bStats.pending++;
+    save(KEYS.bar, barTickets);
+    save(KEYS.bstats, bStats);
     document.getElementById('bt-items').value = '';
-    showToast('🍺 Bar order added');
+    renderBarTickets();
+    showToast('🍺 Bar order saved');
   }
 
+  // ── Table status (click to cycle, auto-saved) ──
   function toggleTableStatus(card) {
+    const name = card.querySelector('.table-name').textContent;
     const states = ['available','occupied','vip'];
-    const labels = { available:'Available', occupied:'Occupied', vip:'VIP — Occupied' };
     const current = states.find(s => card.classList.contains(s)) || 'available';
     const next = states[(states.indexOf(current) + 1) % states.length];
     states.forEach(s => card.classList.remove(s));
     card.classList.add(next);
-    card.querySelector('.table-status-label').textContent = labels[next];
-    showToast('Table status updated');
+    card.querySelector('.table-status-label').textContent = tableLabels[next];
+    tableStatuses[name] = next;
+    save(KEYS.tables, tableStatuses);
+    showToast(`${name} → ${tableLabels[next]} (saved)`);
+  }
+
+  function restoreTableStatuses() {
+    document.querySelectorAll('.table-card').forEach(card => {
+      const name = card.querySelector('.table-name').textContent;
+      const status = tableStatuses[name];
+      if (!status) return;
+      const states = ['available','occupied','vip'];
+      states.forEach(s => card.classList.remove(s));
+      card.classList.add(status);
+      card.querySelector('.table-status-label').textContent = tableLabels[status];
+    });
+  }
+
+  // ── Notes / Announcements ──
+  function renderNotes() {
+    const feed = document.getElementById('notesFeed');
+    feed.innerHTML = '';
+    notes.slice().reverse().forEach((n, i) => {
+      const el = document.createElement('div');
+      el.className = 'ticket';
+      el.style.cssText = 'margin-bottom:8px; font-size:.85rem;';
+      el.innerHTML = `
+        <strong style="color:${n.color || 'var(--blue)'};">${n.role || 'Staff'}:</strong> ${n.text}
+        <div style="margin-top:3px;font-size:.72rem;color:var(--muted);">${n.time}</div>
+      `;
+      feed.appendChild(el);
+    });
   }
 
   function postNote() {
     const input = document.getElementById('noteInput');
-    const val = input.value.trim();
+    const val   = input.value.trim();
     if (!val) return;
-    const feed = document.getElementById('notesFeed');
     const now = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-    const el = document.createElement('div');
-    el.className = 'ticket';
-    el.style.cssText = 'margin-bottom:8px; font-size:.85rem;';
-    el.innerHTML = `<strong style="color:var(--blue);">Staff:</strong> ${val}<div style="margin-top:3px;font-size:.72rem;color:var(--muted);">${now}</div>`;
-    feed.prepend(el);
+    notes.push({ text: val, time: now, role: 'Staff', color: 'var(--blue)' });
+    if (notes.length > 30) notes = notes.slice(-30); // keep last 30
+    save(KEYS.notes, notes);
     input.value = '';
-    showToast('📢 Announcement broadcast to all staff');
+    renderNotes();
+    showToast('📢 Announcement saved & broadcast');
   }
 
+  // ── Reset ──
+  function resetKitchenData() {
+    if (!confirm('Reset all kitchen portal saved data?')) return;
+    Object.values(KEYS).forEach(k => localStorage.removeItem(k));
+    location.reload();
+  }
+
+  // ── Toast ──
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 2800);
   }
+
+  // ── Init: restore all state on page load ──
+  renderKitchenTickets();
+  renderBarTickets();
+  restoreTableStatuses();
+  renderNotes();
+
+  window.addEventListener('load', () => {
+    const hasData = kitchenTickets.length || barTickets.length || notes.length > 2;
+    if (hasData) showToast('💾 Saved data restored');
+  });
 </script>
+
+<style>
+  .reset-btn { background:transparent; border:1px solid #3a2a2a; color:#5a4040; font-size:.72rem; padding:5px 12px; border-radius:6px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s; }
+  .reset-btn:hover { border-color:var(--red); color:var(--red); }
+</style>
 </body>
 </html>
