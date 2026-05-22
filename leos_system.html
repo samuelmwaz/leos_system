@@ -702,7 +702,9 @@
 
 <!-- ════════════ FOOTER ════════════ -->
 <footer class="footer-nav">
-  <span>Leo's Pub & Grill Interactive System · Solwezi</span>
+  <span>Leo's Pub & Grill Interactive System · Solwezi &nbsp;
+    <button class="reset-btn" onclick="resetAllData()">🗑 Reset All Data</button>
+  </span>
   <a href="leos_kitchen.html" class="page-link">🍳 Open Kitchen & Staff Portal →</a>
 </footer>
 
@@ -710,11 +712,33 @@
 <div id="toast"></div>
 
 <script>
-  // ── State ──
-  const balances = { "Table 1": 0, "Table 2": 245, "Table 3": 0, "Table 4": 590 };
+  // ════════════════════════════════════════════
+  //  LEOS SYSTEM — localStorage Persistence
+  //  All state auto-saves on every change and
+  //  restores when the page is reopened.
+  // ════════════════════════════════════════════
+
+  const KEYS = {
+    balances:  'leos_balances',
+    orders:    'leos_orders',      // array of order objects
+    djQueue:   'leos_djqueue',     // array of { song, table }
+    stats:     'leos_stats',       // { totalOrders, totalRequests }
+  };
+
+  // ── Load / Save helpers ──
+  function load(key, fallback) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
+  }
+  function save(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  }
+
+  // ── State (restored from storage or defaults) ──
+  const balances = load(KEYS.balances, { "Table 1": 0, "Table 2": 245, "Table 3": 0, "Table 4": 590 });
+  let orders     = load(KEYS.orders,   []);   // [{ table, name, cat, method, time }]
+  let djQueue    = load(KEYS.djQueue,  []);   // [{ song, table }]
+  let stats      = load(KEYS.stats,    { totalOrders: 0, totalRequests: 0 });
   let cart = [];
-  let totalOrders = 0;
-  let totalRequests = 0;
 
   // ── Menu toggle ──
   function toggleItem(el, name, price, cat) {
@@ -741,35 +765,64 @@
   // ── Place order ──
   function placeOrder() {
     if (cart.length === 0) { showToast('⚠️ Select at least one item first'); return; }
-    const table   = document.getElementById('custTable').value;
-    const method  = document.getElementById('custPayment').value;
-    const feed    = document.getElementById('orderFeed');
-
-    // Clear empty state if present
-    feed.querySelector('.empty')?.remove();
+    const table  = document.getElementById('custTable').value;
+    const method = document.getElementById('custPayment').value;
+    const now    = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
     cart.forEach(item => {
       if (method === 'tab') balances[table] += item.price;
-
-      const li = document.createElement('li');
-      li.className = `feed-item ${item.cat === 'Drink' ? 'drink' : 'food'}`;
-      li.innerHTML = `
-        <div class="feed-meta">
-          <strong>${table}</strong> — ${item.name}
-          <br><small><span class="method-tag ${method === 'tab' ? 'method-tab' : 'method-paid'}">${method === 'tab' ? 'On Tab' : 'MoMo Paid'}</span></small>
-        </div>
-        <button class="btn btn-sm btn-green" onclick="this.closest('li').remove()">Complete</button>
-      `;
-      feed.prepend(li);
+      const order = { table, name: item.name, cat: item.cat, method, time: now };
+      orders.unshift(order); // newest first
     });
 
-    totalOrders += cart.length;
+    stats.totalOrders += cart.length;
     cart = [];
+
+    // Trim to last 50 orders to avoid storage bloat
+    if (orders.length > 50) orders = orders.slice(0, 50);
+
+    save(KEYS.balances, balances);
+    save(KEYS.orders,   orders);
+    save(KEYS.stats,    stats);
+
     document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('selected'));
     renderCart();
+    renderOrderFeed();
     updateLedger();
     updateStats();
-    showToast('✅ Order sent to kitchen!');
+    showToast('✅ Order saved & sent to kitchen!');
+  }
+
+  // ── Render order feed from stored data ──
+  function renderOrderFeed() {
+    const feed = document.getElementById('orderFeed');
+    feed.innerHTML = '';
+    if (orders.length === 0) {
+      feed.innerHTML = '<div class="empty"><span class="icon">⚡</span>No orders yet</div>';
+      return;
+    }
+    orders.forEach((order, idx) => {
+      const li = document.createElement('li');
+      li.className = `feed-item ${order.cat === 'Drink' ? 'drink' : 'food'}`;
+      li.dataset.idx = idx;
+      li.innerHTML = `
+        <div class="feed-meta">
+          <strong>${order.table}</strong> — ${order.name}
+          <br><small>
+            <span class="method-tag ${order.method === 'tab' ? 'method-tab' : 'method-paid'}">${order.method === 'tab' ? 'On Tab' : 'MoMo Paid'}</span>
+            <span style="margin-left:6px;color:var(--muted)">${order.time || ''}</span>
+          </small>
+        </div>
+        <button class="btn btn-sm btn-green" onclick="completeOrder(${idx})">Complete</button>
+      `;
+      feed.appendChild(li);
+    });
+  }
+
+  function completeOrder(idx) {
+    orders.splice(idx, 1);
+    save(KEYS.orders, orders);
+    renderOrderFeed();
   }
 
   // ── DJ request ──
@@ -779,30 +832,53 @@
     const val   = inp.value.trim();
     if (!val) { showToast('⚠️ Enter a track name first'); return; }
 
-    const feed = document.getElementById('djFeed');
-    feed.querySelector('.empty')?.remove();
+    djQueue.push({ song: val, table });
+    stats.totalRequests++;
+    save(KEYS.djQueue, djQueue);
+    save(KEYS.stats,   stats);
 
-    const li = document.createElement('li');
-    li.className = 'feed-item music';
-    li.innerHTML = `
-      <div class="feed-meta">
-        <strong>${val}</strong>
-        <br><small>Requested from ${table}</small>
-      </div>
-      <button class="btn btn-sm btn-violet" onclick="this.closest('li').remove(); totalRequests--; updateStats();">Played ✓</button>
-    `;
-    feed.appendChild(li);
     inp.value = '';
-    totalRequests++;
+    renderDJFeed();
     updateStats();
-    showToast('🎵 Song request sent to DJ!');
+    showToast('🎵 Song request saved & sent to DJ!');
+  }
+
+  function renderDJFeed() {
+    const feed = document.getElementById('djFeed');
+    feed.innerHTML = '';
+    if (djQueue.length === 0) {
+      feed.innerHTML = '<div class="empty"><span class="icon">🎵</span>No requests yet — queue is empty</div>';
+      return;
+    }
+    djQueue.forEach((req, idx) => {
+      const li = document.createElement('li');
+      li.className = 'feed-item music';
+      li.innerHTML = `
+        <div class="feed-meta">
+          <strong>${req.song}</strong>
+          <br><small>Requested from ${req.table}</small>
+        </div>
+        <button class="btn btn-sm btn-violet" onclick="playedTrack(${idx})">Played ✓</button>
+      `;
+      feed.appendChild(li);
+    });
+  }
+
+  function playedTrack(idx) {
+    djQueue.splice(idx, 1);
+    stats.totalRequests = Math.max(0, stats.totalRequests - 1);
+    save(KEYS.djQueue, djQueue);
+    save(KEYS.stats,   stats);
+    renderDJFeed();
+    updateStats();
   }
 
   // ── Ledger ──
   function clearTab(table) {
     balances[table] = 0;
+    save(KEYS.balances, balances);
     updateLedger();
-    showToast(`✅ ${table} tab cleared`);
+    showToast(`✅ ${table} tab cleared & saved`);
   }
 
   function updateLedger() {
@@ -828,8 +904,15 @@
 
   // ── Stats ──
   function updateStats() {
-    document.getElementById('statOrders').textContent = totalOrders;
-    document.getElementById('statRequests').textContent = totalRequests;
+    document.getElementById('statOrders').textContent   = stats.totalOrders;
+    document.getElementById('statRequests').textContent = stats.totalRequests;
+  }
+
+  // ── Reset all data (manager action) ──
+  function resetAllData() {
+    if (!confirm('Reset ALL saved data for Leo\'s system? This cannot be undone.')) return;
+    Object.values(KEYS).forEach(k => localStorage.removeItem(k));
+    location.reload();
   }
 
   // ── Toast ──
@@ -840,8 +923,34 @@
     setTimeout(() => t.classList.remove('show'), 2800);
   }
 
-  // ── Init ──
+  // ── Init: restore everything on page load ──
+  renderOrderFeed();
+  renderDJFeed();
   updateLedger();
+  updateStats();
+
+  // Show a subtle "data restored" indicator if there was saved data
+  window.addEventListener('load', () => {
+    if (orders.length > 0 || djQueue.length > 0 || Object.values(balances).some(b => b > 0)) {
+      showToast('💾 Saved data restored');
+    }
+  });
 </script>
+
+<!-- Reset button (admin use) -->
+<style>
+  .reset-btn {
+    background: transparent;
+    border: 1px solid #3a2a2a;
+    color: #5a4040;
+    font-size: .72rem;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all .2s;
+  }
+  .reset-btn:hover { border-color: var(--red); color: var(--red); }
+</style>
 </body>
 </html>
